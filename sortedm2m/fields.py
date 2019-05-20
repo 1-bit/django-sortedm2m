@@ -74,8 +74,7 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
                     if isinstance(obj, self.model):
                         if not router.allow_relation(obj, self.instance):
                             raise ValueError(
-                                'Cannot add "%r": instance is on database "%s"'
-                                ', value is on database "%s"' %
+                                'Cannot add "%r": instance is on database "%s", value is on database "%s"' %  # noqa
                                 (obj, self.instance._state.db, obj._state.db)
                             )
 
@@ -85,8 +84,7 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
 
                         if fk_val is None:
                             raise ValueError(
-                                'Cannot add "%r": the value for field "%s" is'
-                                ' None' %
+                                'Cannot add "%r": the value for field "%s" is None' %  # noqa
                                 (obj, target_field_name)
                             )
 
