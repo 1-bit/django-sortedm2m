@@ -35,12 +35,13 @@ class TestMigrations(TransactionTestCase):
                         os.remove(filepath)
 
     def test_defined_migration(self):
-        photo = Photo.objects.create(name='Photo')
         gallery = Gallery.objects.create(name='Gallery')
         # photos field is already migrated.
         self.assertEqual(gallery.photos.count(), 0)
         # photos2 field is not yet migrated.
-        self.assertRaises((OperationalError, ProgrammingError), gallery.photos2.count)
+        self.assertRaises(
+            (OperationalError, ProgrammingError), gallery.photos2.count
+        )
 
     def test_make_migration(self):
         with capture_stdout():
@@ -66,14 +67,26 @@ class TestMigrations(TransactionTestCase):
 
         gallery = Gallery.objects.get(name='Gallery')
 
-        self.assertEqual(list(gallery.photos.values_list('name', flat=True)), ['A', 'C', 'B'])
-        self.assertEqual(list(gallery.photos2.values_list('name', flat=True)), ['B', 'A', 'C'])
+        self.assertEqual(
+            list(gallery.photos.values_list('name', flat=True)),
+            ['A', 'C', 'B']
+        )
+        self.assertEqual(
+            list(gallery.photos2.values_list('name', flat=True)),
+            ['B', 'A', 'C']
+        )
 
         m2m_set(gallery, "photos", [p3, p2])
-        self.assertEqual(list(gallery.photos.values_list('name', flat=True)), ['B', 'C'])
+        self.assertEqual(
+            list(gallery.photos.values_list('name', flat=True)),
+            ['B', 'C']
+        )
 
         gallery = Gallery.objects.get(name='Gallery')
-        self.assertEqual(list(gallery.photos.values_list('name', flat=True)), ['B', 'C'])
+        self.assertEqual(
+            list(gallery.photos.values_list('name', flat=True)),
+            ['B', 'C']
+        )
 
 
 class TestAlterSortedManyToManyFieldOperation(TransactionTestCase):
@@ -114,11 +127,10 @@ class TestAlterSortedManyToManyFieldOperation(TransactionTestCase):
         t2 = Target.objects.create(pk=2)
         t3 = Target.objects.create(pk=3)
 
-        field = get_field(M2MToSortedM2M,'m2m')
+        field = get_field(M2MToSortedM2M, 'm2m')
         through_model = get_rel(field).through
         # No ordering is in place.
         self.assertTrue(not through_model._meta.ordering)
-
 
         instance = M2MToSortedM2M.objects.create(pk=1)
         instance.m2m.add(t3)
@@ -140,7 +152,7 @@ class TestAlterSortedManyToManyFieldOperation(TransactionTestCase):
         t2 = Target.objects.get(pk=2)
         t3 = Target.objects.get(pk=3)
 
-        field = get_field(M2MToSortedM2M,'m2m')
+        field = get_field(M2MToSortedM2M, 'm2m')
         through_model = get_rel(field).through
         # Now, ordering is there.
         self.assertTrue(list(through_model._meta.ordering), ['sort_value'])

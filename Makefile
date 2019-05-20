@@ -7,3 +7,6 @@ isort_check:
 
 isort:
 	isort -rc sortedm2m sortedm2m_tests
+
+flake8:
+	flake8 sortedm2m sortedm2m_tests example test_project

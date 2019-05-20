@@ -69,7 +69,9 @@ class TestSortedManyToManyField(TestCase):
         shelf.books.clear()
         self.assertEqual(list(shelf.books.all()), [])
 
-        shelf.books.add(self.books[3].pk, self.books[1], force_text(self.books[2].pk))
+        shelf.books.add(
+            self.books[3].pk, self.books[1], force_text(self.books[2].pk)
+        )
         self.assertEqual(list(shelf.books.all()), [
             self.books[3],
             self.books[1],
@@ -148,29 +150,15 @@ class TestSortedManyToManyField(TestCase):
         shelf.books.remove(self.books[2], force_text(self.books[4].pk))
         self.assertEqual(list(shelf.books.all()), [])
 
-#    def test_add_relation_by_hand(self):
-#        shelf = self.model.objects.create()
-#        shelf.books = self.books[2:5]
-#        self.assertEqual(list(shelf.books.all()), [
-#            self.books[2],
-#            self.books[3],
-#            self.books[4]])
-#
-#        shelf.books.create()
-#        self.assertEqual(list(shelf.books.all()), [
-#            self.books[2],
-#            self.books[3],
-#            self.books[4]])
-
     # to enable population of connection.queries
     @override_settings(DEBUG=True)
     def test_prefetch_related_queries_num(self):
         shelf = self.model.objects.create()
         shelf.books.add(self.books[0])
 
-        shelf = self.model.objects.filter(pk=shelf.pk).prefetch_related('books')[0]
+        shelf = self.model.objects.filter(pk=shelf.pk).prefetch_related('books')[0]  # noqa
         queries_num = len(connection.queries)
-        name = shelf.books.all()[0].name
+        shelf.books.all()[0].name
         self.assertEqual(queries_num, len(connection.queries))
 
     def test_prefetch_related_sorting(self):
@@ -178,7 +166,8 @@ class TestSortedManyToManyField(TestCase):
         books = [self.books[0], self.books[2], self.books[1]]
         m2m_set(shelf, "books", books)
 
-        shelf = self.model.objects.filter(pk=shelf.pk).prefetch_related('books')[0]
+        shelf = self.model.objects.filter(pk=shelf.pk).prefetch_related('books')[0]  # noqa
+
         def get_ids(queryset):
             return [obj.id for obj in queryset]
         self.assertEqual(get_ids(shelf.books.all()), get_ids(books))
@@ -201,7 +190,9 @@ class TestCustomBaseClass(TestSortedManyToManyField):
         shelf.books.add(self.books[0])
         through_model = shelf.books.through
         instance = through_model.objects.all()[0]
-        self.assertEqual(str(instance), "Relationship to {0}".format(instance.book.name))
+        self.assertEqual(
+            str(instance), "Relationship to {0}".format(instance.book.name)
+        )
 
     def test_custom_sort_value_field_name(self):
         from sortedm2m.fields import SORT_VALUE_FIELD_NAME
@@ -219,7 +210,7 @@ class TestCustomBaseClass(TestSortedManyToManyField):
         field = get_field(intermediate_model, 'diy_sort_number')
         self.assertTrue(field)
 
-@skipIf(django.VERSION < (2, 2), 'RelatedManager._add_items() has new through_defaults argument in Django >= 2.2')
+@skipIf(django.VERSION < (2, 2), 'RelatedManager._add_items() has new through_defaults argument in Django >= 2.2')  # noqa
 class TestCustomThroughClass(TestSortedManyToManyField):
     model = TaggedDoItYourselfShelf
 
@@ -228,7 +219,10 @@ class TestCustomThroughClass(TestSortedManyToManyField):
         shelf.books.add(self.books[0])
         through_model = shelf.books.through
         instance = through_model.objects.all()[0]
-        self.assertEqual(str(instance), "Relationship to {0} tagged as <>".format(instance.book.name))
+        self.assertEqual(
+            str(instance),
+            "Relationship to {0} tagged as <>".format(instance.book.name)
+        )
 
     def test_through_defaults(self):
         shelf = self.model.objects.create()
@@ -241,7 +235,10 @@ class TestCustomThroughClass(TestSortedManyToManyField):
                          self.books[3:5] + [self.books[2]] + self.books[:2])
 
         through_model = shelf.books.through
-        rels = [(o.book_id, o.tags_diy_sort_number, o.tags) for o in through_model.objects.all()]
+        rels = [
+            (o.book_id, o.tags_diy_sort_number, o.tags)
+            for o in through_model.objects.all()
+        ]
 
         self.assertEqual(rels, [
             (self.books[3].pk, 1, 'A'),
@@ -261,13 +258,13 @@ class TestSelfReference(TestCase):
         s1.me.add(s3)
         s1.me.add(s4, s2)
 
-        self.assertEqual(list(s1.me.all()), [s3,s4,s2])
+        self.assertEqual(list(s1.me.all()), [s3, s4, s2])
 
 
 class TestDjangoManyToManyFieldNotAvailableThroughSortedM2M(TestCase):
     @staticmethod
     def _import_django_many_to_many_through_sortedm2m():
-        from sortedm2m.fields import ManyToManyField
+        from sortedm2m.fields import ManyToManyField   # noqa
 
     def test_many_to_many_field_not_available(self):
         self.assertRaises(

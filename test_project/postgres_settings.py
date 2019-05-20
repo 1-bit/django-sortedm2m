@@ -1,6 +1,6 @@
 import os
 
-from test_project.settings import *
+from test_project.settings import *  # noqa
 
 
 DATABASES = {
