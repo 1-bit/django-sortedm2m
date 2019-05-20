@@ -36,14 +36,16 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
             # are hidden for joins because we set ``auto_created`` on the
             # intermediary's meta options.
             try:
-                return self.instance._prefetched_objects_cache[self.prefetch_cache_name]
+                return self.instance._prefetched_objects_cache[self.prefetch_cache_name]  # noqa
             except (AttributeError, KeyError):
                 queryset = super(SortedRelatedManager, self).get_queryset()
                 return self._apply_rel_ordering(queryset)
 
         def get_prefetch_queryset(self, instances, queryset=None):
             # Apply the same ordering for prefetch ones
-            result = super(SortedRelatedManager, self).get_prefetch_queryset(instances, queryset)
+            result = super(SortedRelatedManager, self).get_prefetch_queryset(
+                instances, queryset
+            )
             return (self._apply_rel_ordering(result[0]),) + result[1:]
 
         def set(self, objs, **kwargs):
@@ -52,10 +54,13 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
             super(SortedRelatedManager, self).set(objs, **kwargs)
         set.alters_data = True
 
-        def _add_items(self, source_field_name, target_field_name, *objs, **kwargs):
-            # source_field_name: the PK fieldname in join table for the source object
-            # target_field_name: the PK fieldname in join table for the target object
-            # *objs - objects to add. Either object instances, or primary keys of object instances.
+        def _add_items(self, source_field_name, target_field_name, *objs, **kwargs):  # noqa
+            # source_field_name:
+            #    the PK fieldname in join table for the source object
+            # target_field_name:
+            #    the PK fieldname in join table for the target object
+            # *objs - objects to add.
+            #    Either object instances, or primary keys of object instances.
             # **kwargs: in Django >= 2.2; contains `through_defaults` key.
             through_defaults = kwargs.get('through_defaults') or {}
 
@@ -69,15 +74,17 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
                     if isinstance(obj, self.model):
                         if not router.allow_relation(obj, self.instance):
                             raise ValueError(
-                                'Cannot add "%r": instance is on database "%s", value is on database "%s"' %
+                                'Cannot add "%r": instance is on database "%s", value is on database "%s"' %  # noqa
                                 (obj, self.instance._state.db, obj._state.db)
                             )
 
-                        fk_val = self.through._meta.get_field(target_field_name).get_foreign_related_value(obj)[0]
+                        fk_val = self.through._meta.get_field(
+                            target_field_name
+                        ).get_foreign_related_value(obj)[0]
 
                         if fk_val is None:
                             raise ValueError(
-                                'Cannot add "%r": the value for field "%s" is None' %
+                                'Cannot add "%r": the value for field "%s" is None' %  # noqa
                                 (obj, target_field_name)
                             )
 
@@ -107,7 +114,7 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
 
                 # Add the ones that aren't there already
                 with transaction.atomic(using=db, savepoint=False):
-                    if self.reverse or source_field_name == self.source_field_name:
+                    if self.reverse or source_field_name == self.source_field_name:  # noqa
                         # Don't send the signal when we are inserting the
                         # duplicate data row for symmetrical reverse entries.
                         signals.m2m_changed.send(
@@ -121,9 +128,14 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
                     sort_field_name = rel_through._sort_field_name
 
                     # Use the max of all indices as start index...
-                    # maybe an autoincrement field should do the job more efficiently ?
-                    source_queryset = manager.filter(**{'%s_id' % source_field_name: rel_source_fk})
-                    sort_value_max = source_queryset.aggregate(max=Max(sort_field_name))['max'] or 0
+                    # maybe an autoincrement field should do the job more
+                    # efficiently ?
+                    source_queryset = manager.filter(
+                        **{'%s_id' % source_field_name: rel_source_fk}
+                    )
+                    sort_value_max = source_queryset.aggregate(
+                        max=Max(sort_field_name)
+                    )['max'] or 0
 
                     bulk_data = [
                         dict(through_defaults, **{
@@ -131,12 +143,16 @@ def create_sorted_many_related_manager(superclass, rel, *args, **kwargs):
                             '%s_id' % target_field_name: obj_id,
                             sort_field_name: obj_idx,
                         })
-                        for obj_idx, obj_id in enumerate(new_ids, sort_value_max + 1)
+                        for obj_idx, obj_id in enumerate(
+                            new_ids, sort_value_max + 1
+                        )
                     ]
 
-                    manager.bulk_create([rel_through(**data) for data in bulk_data])
+                    manager.bulk_create(
+                        [rel_through(**data) for data in bulk_data]
+                    )
 
-                    if self.reverse or source_field_name == self.source_field_name:
+                    if self.reverse or source_field_name == self.source_field_name:  # noqa
                         # Don't send the signal when we are inserting the
                         # duplicate data row for symmetrical reverse entries.
                         signals.m2m_changed.send(
@@ -192,18 +208,18 @@ class SortedManyToManyField(_ManyToManyField):
     def deconstruct(self):
         # We have to persist custom added options in the ``kwargs``
         # dictionary. For readability only non-default values are stored.
-        name, path, args, kwargs = super(SortedManyToManyField, self).deconstruct()
+        name, path, args, kwargs = super(SortedManyToManyField, self).deconstruct()  # noqa
         if self.sort_value_field_name is not SORT_VALUE_FIELD_NAME:
             kwargs['sort_value_field_name'] = self.sort_value_field_name
         if self.sorted is not True:
             kwargs['sorted'] = self.sorted
         return name, path, args, kwargs
-    
+
     def check(self, **kwargs):
         return (
             super(SortedManyToManyField, self).check(**kwargs) +
             self._check_through_sortedm2m(**kwargs)
-        ) 
+        )
 
     def _check_through_sortedm2m(self, **kwargs):
         rel = get_rel(self)
@@ -213,14 +229,15 @@ class SortedManyToManyField(_ManyToManyField):
         if self.sorted and rel.through:
             assert hasattr(rel.through, '_sort_field_name'), (
                 "The model is used as an intermediate model by "
-                 "'%s' but has no defined '_sort_field_name' attribute" % rel.through
+                "'%s' but has no defined '_sort_field_name' "
+                "attribute" % rel.through
             )
 
         return []
 
     def contribute_to_class(self, cls, name, **kwargs):
         if not self.sorted:
-            return super(SortedManyToManyField, self).contribute_to_class(cls, name, **kwargs)
+            return super(SortedManyToManyField, self).contribute_to_class(cls, name, **kwargs)  # noqa
 
         # To support multiple relations to self, it's useful to have a non-None
         # related name on symmetrical relations for internal reasons. The
@@ -230,7 +247,7 @@ class SortedManyToManyField(_ManyToManyField):
         # clash.
         rel = get_rel(self)
 
-        if rel.symmetrical and (rel.model == "self" or rel.model == cls._meta.object_name):
+        if rel.symmetrical and (rel.model == "self" or rel.model == cls._meta.object_name):  # noqa
             rel.related_name = "%s_rel_+" % name
         elif rel.is_hidden():
             # If the backwards relation is disabled, replace the original
@@ -249,7 +266,9 @@ class SortedManyToManyField(_ManyToManyField):
             if rel.through:
                 def resolve_through_model(_, model, field):
                     rel.through = model
-                lazy_related_operation(resolve_through_model, cls, rel.through, field=self)
+                lazy_related_operation(
+                    resolve_through_model, cls, rel.through, field=self
+                )
             elif not cls._meta.swapped:
                 rel.through = self.create_intermediate_model(cls)
 
@@ -270,14 +289,14 @@ class SortedManyToManyField(_ManyToManyField):
         return super(SortedManyToManyField, self).formfield(**defaults)
 
     def create_intermediate_model(self, klass):
-        base_classes = (self.base_class, models.Model) if self.base_class else (models.Model,)
+        base_classes = (self.base_class, models.Model) if self.base_class else (models.Model,)  # noqa
 
         return create_sortable_many_to_many_intermediary_model(
             self, klass, self.sort_value_field_name,
             base_classes=base_classes)
 
 
-def create_sortable_many_to_many_intermediary_model(field, klass, sort_field_name, base_classes=None):
+def create_sortable_many_to_many_intermediary_model(field, klass, sort_field_name, base_classes=None):  # noqa
     def set_managed(model, related, through):
         through._meta.managed = model._meta.managed or related._meta.managed
 
@@ -302,8 +321,8 @@ def create_sortable_many_to_many_intermediary_model(field, klass, sort_field_nam
         'db_tablespace': klass._meta.db_tablespace,
         'unique_together': (from_, to),
         'ordering': (sort_field_name,),
-        'verbose_name': _('%(from)s-%(to)s relationship') % {'from': from_, 'to': to},
-        'verbose_name_plural': _('%(from)s-%(to)s relationships') % {'from': from_, 'to': to},
+        'verbose_name': _('%(from)s-%(to)s relationship') % {'from': from_, 'to': to},  # noqa
+        'verbose_name_plural': _('%(from)s-%(to)s relationships') % {'from': from_, 'to': to},  # noqa
         'apps': field.model._meta.apps,
     })
 

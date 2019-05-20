@@ -1,6 +1,5 @@
 # Django settings for testsite project.
 import os
-import django
 
 
 PROJECT_ROOT = os.path.abspath(os.path.dirname(__file__))
@@ -81,7 +80,8 @@ INSTALLED_APPS = (
 
 MIGRATION_MODULES = {
     'migrations_tests': 'sortedm2m_tests.migrations_tests.django17_migrations',
-    'altersortedmanytomanyfield_tests': 'sortedm2m_tests.altersortedmanytomanyfield_tests.django17_migrations',
+    'altersortedmanytomanyfield_tests':
+        'sortedm2m_tests.altersortedmanytomanyfield_tests.django17_migrations',
 }
 
 TEST_RUNNER = 'django.test.runner.DiscoverRunner'
@@ -108,6 +108,6 @@ TEMPLATES = [
 ]
 
 try:
-    from local_settings import *
+    from local_settings import *  # noqa
 except ImportError:
     pass
